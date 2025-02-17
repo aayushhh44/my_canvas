@@ -1,35 +1,72 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useLayoutEffect, useState } from "react";
+import rough from "roughjs/bundled/rough.esm";
+import "./App.css";
+
+const generator = rough.generator();
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [elements, setElements] = useState<any[]>([]);
+  console.log('ur elements', elements)
+  const [drawing, setDrawing] = useState<boolean>(false);
+
+  const createElement = (x1: number, y1: number, x2: number, y2: number) => {
+    const roughElement = generator.line(x1, y1, x2, y2);
+    return { x1, y1, x2, y2, roughElement };
+  };
+
+  useLayoutEffect(() => {
+    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const ctx = canvas.getContext("2d");
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+
+    const roughCanvas = rough.canvas(canvas);
+    elements.forEach(({ roughElement }) => roughCanvas.draw(roughElement));
+  }, [elements]);
+
+  const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    setDrawing(false); 
+  };
+
+  const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    setDrawing(true);
+
+    const { clientX, clientY } = event;
+    const element = createElement(clientX, clientY, clientX, clientY);
+
+    setElements((prevState) => [...prevState, element]);
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!drawing) return;
+
+    const { clientX, clientY } = event;
+    const index = elements.length - 1; 
+    const { x1, y1 } = elements[index]; 
+
+    const updatedElement = createElement(x1, y1, clientX, clientY); 
+    const elementsCopy = [...elements];
+    elementsCopy[index] = updatedElement; 
+
+    setElements(elementsCopy);
+  };
 
   return (
     <>
       <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        {/* <h1>Aayush</h1> */}
+        <canvas
+          id="canvas"
+          width={window.innerWidth}
+          height={window.innerHeight}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+        >
+          Canvas
+        </canvas>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
